@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Stanzom",
+    "slug": "stanzom",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#07090F"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.stanzom.app",
+      "infoPlist": {
+        "NSContactsUsageDescription": "Stanzom needs access to your contacts to invite friends to fan rooms."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#07090F"
+      },
+      "package": "com.stanzom.app",
+      "permissions": ["READ_CONTACTS"]
+    },
+    "scheme": "stanzom",
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-contacts",
+      [
+        "expo-font",
+        {
+          "fonts": []
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
