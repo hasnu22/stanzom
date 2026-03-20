@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: stanzom-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/stanzom?TimeZone=Asia/Kolkata
+    username: stanzom
+    password: ${DB_PASSWORD:stanzom123}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+  flyway:
+    enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+
+stanzom:
+  app-name: Stanzom
+  jwt:
+    secret: ${JWT_SECRET:mySuperSecretKeyForJWTTokenGenerationThatIsAtLeast256BitsLong2024}
+    expiration: 86400000
+    refresh-expiration: 604800000
+  aws:
+    bucket: stanzom-media
+    region: ap-south-1
+  points:
+    share-wa: 10
+    share-x: 15
+    share-sc: 10
+    referral-download: 50
+    daily-login: 5
+    prediction-correct: 10
+    vote: 2
+    rate: 5
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html

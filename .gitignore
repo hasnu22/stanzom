@@ -1,0 +1,32 @@
+# Java
+stanzom-backend/target/
+*.class
+*.jar
+*.war
+
+# Node
+stanzom-mobile/node_modules/
+stanzom-mobile/android/.gradle/
+stanzom-mobile/android/build/
+stanzom-mobile/android/app/build/
+stanzom-mobile/android/.idea/
+stanzom-mobile/.expo/
+stanzom-admin/node_modules/
+stanzom-admin/dist/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Env
+.env
+*.env.local
+firebase-credentials.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# APK
+*.apk

@@ -1,0 +1,124 @@
+name: Deploy Stanzom
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  JAVA_VERSION: '17'
+  NODE_VERSION: '20'
+
+jobs:
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: stanzom_test
+          POSTGRES_USER: stanzom
+          POSTGRES_PASSWORD: testpassword
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
+
+      - name: Run backend tests
+        working-directory: stanzom-backend
+        env:
+          DB_PASSWORD: testpassword
+          JWT_SECRET: test-jwt-secret-key-for-ci
+          ADMIN_JWT_SECRET: test-admin-jwt-secret
+          REDIS_PASSWORD: ''
+        run: mvn test -B
+
+  test-admin:
+    name: Test Admin Panel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: stanzom-admin/package-lock.json
+
+      - name: Install dependencies
+        working-directory: stanzom-admin
+        run: npm ci
+
+      - name: Type check
+        working-directory: stanzom-admin
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: stanzom-admin
+        run: npm run build
+
+  deploy:
+    name: Deploy to Production
+    needs: [test-backend, test-admin]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./stanzom-backend
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/stanzom-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/stanzom-backend:${{ github.sha }}
+
+      - name: Build & push admin image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./stanzom-admin
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/stanzom-admin:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/stanzom-admin:${{ github.sha }}
+
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: root
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /opt/stanzom
+            export DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker system prune -f
+            echo "Deployment complete: $(date)"

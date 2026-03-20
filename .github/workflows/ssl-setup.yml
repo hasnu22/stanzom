@@ -1,0 +1,35 @@
+name: SSL Certificate Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Domain to issue certificate for'
+        required: true
+        default: 'api.stanzom.com'
+      email:
+        description: 'Email for Let''s Encrypt notifications'
+        required: true
+
+jobs:
+  issue-cert:
+    name: Issue SSL Certificate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue certificate on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: root
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            cd /opt/stanzom
+            docker compose -f docker-compose.prod.yml run --rm certbot \
+              certbot certonly --webroot \
+              -w /var/www/certbot \
+              -d ${{ inputs.domain }} \
+              --email ${{ inputs.email }} \
+              --agree-tos \
+              --no-eff-email
+            docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+            echo "SSL certificate issued for ${{ inputs.domain }}"

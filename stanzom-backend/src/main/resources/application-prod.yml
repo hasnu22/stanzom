@@ -1,0 +1,7 @@
+logging:
+  level:
+    com.stanzom: WARN
+
+spring:
+  jpa:
+    show-sql: false

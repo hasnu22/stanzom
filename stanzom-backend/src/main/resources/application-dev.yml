@@ -1,0 +1,7 @@
+logging:
+  level:
+    com.stanzom: DEBUG
+
+spring:
+  jpa:
+    show-sql: true
